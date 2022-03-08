@@ -1,0 +1,80 @@
+{% if first_time_accessed %}
+<script>
+  /**
+   * transaction_id
+   * If checkout.order_id doesn't have a value yet, use checkout.id instead.
+   */
+  {% if checkout.order_id != empty %}
+    var transaction_id = '{{ checkout.order_id }}';
+  {% else %}
+    var transaction_id = '{{ checkout.id }}';
+  {% endif %}
+
+  /**
+   * transaction_affiliation
+   * Get the shop name. Used for multiple vendors, but Shopify doesn't provide a 
+   * list of vendors at the order status page.
+   */
+  var transaction_affiliation = '{{ shop.name }}';
+
+  /**
+   * transaction_total
+   * Get the total price of the transaction, including shipping, discounts and taxes. 
+   * Numerical value only and not currency.
+   */
+  var transaction_total = '{{ checkout.total_price | money_without_currency }}';
+
+  /**
+   * transaction_shipping
+   * Get the shipping charge of the transaction. 
+   * Numerical value only and not currency.
+   */
+  var transaction_shipping = '{{ checkout.shipping_price | money_without_currency }}';
+
+  /**
+   * transaction_tax
+   * get the tax amount for the transaction. 
+   * Numerical value only and not currency.
+   */
+  var transaction_tax = '{{ checkout.tax_price | money_without_currency }}';
+
+  /**
+   * transaction_currency
+   * get the currency iso code.
+   */
+  var transaction_currency = '{{ checkout.currency }}';
+
+  /**
+   * transactionProducts
+   * Array of items purchased in the transaction.
+   */
+  var transaction_products = [];
+
+  {% for line_item in checkout.line_items %}
+    var product_name = '{{ line_item.product.title }}';
+    var product_sku = '{{ line_item.sku }}';
+    var product_price = '{{ line_item.final_price | money_without_currency }}';
+    var product_quantity = {{ line_item.quantity }};
+    var product = {
+      item_name: product_name,
+      item_id: product_sku,
+      price: product_price,
+      quantity: product_quantity
+    };
+    transaction_products.push(product);
+  {% endfor %}
+
+  dataLayer.push({
+    event: 'purchase',
+    ecommerce: {
+      transaction_id: transaction_id,
+      affiliation: transaction_affiliation,
+      value: transaction_total,
+      shipping: transaction_shipping,
+      tax: transaction_tax,
+      currency: transaction_currency,
+      items: transaction_products
+    }
+  });
+</script>
+{% endif %}
